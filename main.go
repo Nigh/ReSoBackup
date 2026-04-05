@@ -39,7 +39,7 @@ func main() {
 func runBackup(args []string) error {
 	fs := flag.NewFlagSet("backup", flag.ContinueOnError)
 	input := fs.String("input", "", "path to source file")
-	shares := fs.Int("shares", 0, "total number of shares (>20)")
+	shares := fs.Int("shares", 0, "total number of shares (21~256)")
 	threshold := fs.Int("threshold", 0, "minimum shares required to restore (>80% of shares)")
 	password := fs.String("password", "", "backup password (optional, prompt if empty)")
 	outDir := fs.String("out-dir", "", "output directory (default: source file directory)")
@@ -80,7 +80,7 @@ Usage:
   rsbackup restore --input <any .rs.NNN or .rsmeta file> [--password <pwd>] [--out-dir <dir>]
 
 Notes:
-  - shares must be > 20
+  - shares must be > 20 and <= 256
   - threshold must be > 80% of shares and <= shares
   - password can be provided by flag or entered interactively`)
 }
