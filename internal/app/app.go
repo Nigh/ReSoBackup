@@ -224,8 +224,8 @@ func validateBackupOptions(opts BackupOptions) error {
 	if opts.InputPath == "" {
 		return errors.New("--input is required")
 	}
-	if opts.Shares <= 20 {
-		return errors.New("--shares must be > 20")
+	if opts.Shares <= 20 || opts.Shares > 256 {
+		return errors.New("--shares must be (21~256)")
 	}
 	if opts.Threshold <= opts.Shares*80/100 {
 		return errors.New("--threshold must be > 80% of shares")
