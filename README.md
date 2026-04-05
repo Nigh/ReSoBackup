@@ -22,8 +22,25 @@
 ## 安装/构建
 
 ```bash
-go build -o rsbackup .
+make
 ```
+
+默认会构建全部发布版本，也可以显式执行：
+
+```bash
+make build-all
+```
+
+默认会在 `dist/` 下生成标准平台-架构命名的二进制：
+
+- `rsbackup_linux_amd64`
+- `rsbackup_linux_arm64`
+- `rsbackup_windows_amd64.exe`
+- `rsbackup_windows_arm64.exe`
+- `rsbackup_darwin_amd64`
+- `rsbackup_darwin_arm64`
+
+构建时会启用适合 Go CLI 的瘦身参数：`-trimpath`、`-buildvcs=false`、`-ldflags="-s -w"`。
 
 ## 备份
 
