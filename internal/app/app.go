@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/scrypt"
@@ -37,6 +38,9 @@ type RestoreOptions struct {
 
 func RunBackup(opts BackupOptions) error {
 	if err := validateBackupOptions(opts); err != nil {
+		return err
+	}
+	if err := confirmBackupWarnings(opts); err != nil {
 		return err
 	}
 
@@ -224,11 +228,11 @@ func validateBackupOptions(opts BackupOptions) error {
 	if opts.InputPath == "" {
 		return errors.New("--input is required")
 	}
-	if opts.Shares <= 20 || opts.Shares > 256 {
-		return errors.New("--shares must be (21~256)")
+	if opts.Shares < 3 || opts.Shares > 128 {
+		return errors.New("--shares must be in range [3, 128]")
 	}
-	if opts.Threshold <= opts.Shares*80/100 {
-		return errors.New("--threshold must be > 80% of shares")
+	if opts.Threshold < 1 {
+		return errors.New("--threshold must be >= 1")
 	}
 	if opts.Threshold > opts.Shares {
 		return errors.New("--threshold must be <= shares")
@@ -241,6 +245,53 @@ func validateBackupOptions(opts BackupOptions) error {
 		return errors.New("input path must be a file, not directory")
 	}
 	return nil
+}
+
+func confirmBackupWarnings(opts BackupOptions) error {
+	warnings := collectBackupWarnings(opts)
+	if len(warnings) == 0 {
+		return nil
+	}
+	if !term.IsTerminal(int(os.Stdin.Fd())) {
+		return fmt.Errorf("backup parameters require confirmation in interactive mode: %s", strings.Join(warnings, "; "))
+	}
+
+	fmt.Fprintln(os.Stderr, "Warnings:")
+	for _, warning := range warnings {
+		fmt.Fprintf(os.Stderr, "- %s\n", warning)
+	}
+	fmt.Fprint(os.Stderr, "Continue anyway? [y/N]: ")
+
+	var input string
+	if _, err := fmt.Fscanln(os.Stdin, &input); err != nil {
+		if errors.Is(err, io.EOF) {
+			return errors.New("backup cancelled: confirmation declined")
+		}
+		return fmt.Errorf("read confirmation: %w", err)
+	}
+	answer := strings.ToLower(strings.TrimSpace(input))
+	if answer != "y" && answer != "yes" {
+		return errors.New("backup cancelled: confirmation declined")
+	}
+	return nil
+}
+
+func collectBackupWarnings(opts BackupOptions) []string {
+	parity := opts.Shares - opts.Threshold
+	var warnings []string
+
+	if parity < 2 || parity*100 < opts.Shares*15 {
+		warnings = append(warnings,
+			fmt.Sprintf("low redundancy: only %d redundant share(s), so losing more than %d share(s) will make recovery impossible", parity, parity))
+	}
+
+	expansion := float64(opts.Shares) / float64(opts.Threshold)
+	if expansion > 2.0 {
+		warnings = append(warnings,
+			"high redundancy: total stored share data will be about "+strconv.FormatFloat(expansion, 'f', 2, 64)+"x the encrypted payload size")
+	}
+
+	return warnings
 }
 
 func readPasswordIfNeeded(pwd, prompt string) (string, error) {

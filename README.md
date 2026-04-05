@@ -13,48 +13,36 @@
 
 - 支持 `backup` / `restore` 两个子命令
 - 密码输入支持：命令行参数优先，未提供时交互输入
-- 强制要求：
-  - `20 < shares <= 256`
-  - `threshold > 80% * shares`
+- 备份参数硬限制：
+  - `3 <= shares <= 128`
+  - `1 <= threshold <= shares`
+- 默认参数：
+  - `shares = 8`
+  - `threshold = 5`
+- 当参数组合存在风险时，会要求交互二次确认：
+  - 冗余过低：分片稍有丢失就可能无法恢复
+  - 冗余过高：总存储数据量会明显增大
 - 输出分片格式：`.rs.001`、`.rs.002` ...
 - 元数据文件：`.rsmeta`
 
-## 安装/构建
+## 使用
+
+
+### 1. 备份
 
 ```bash
-make
-```
-
-默认会构建全部发布版本，也可以显式执行：
-
-```bash
-make build-all
-```
-
-默认会在 `dist/` 下生成标准平台-架构命名的二进制：
-
-- `rsbackup_linux_amd64`
-- `rsbackup_linux_arm64`
-- `rsbackup_windows_amd64.exe`
-- `rsbackup_windows_arm64.exe`
-- `rsbackup_darwin_amd64`
-- `rsbackup_darwin_arm64`
-
-构建时会启用适合 Go CLI 的瘦身参数：`-trimpath`、`-buildvcs=false`、`-ldflags="-s -w"`。
-
-## 备份
-
-```bash
-rsbackup backup --input ./example.txt --shares 24 --threshold 20 --password my-secret
+rsbackup backup --input ./example.txt --shares 8 --threshold 5 --password my-secret
 ```
 
 如果不传密码：
 
 ```bash
-rsbackup backup --input ./example.txt --shares 24 --threshold 20
+rsbackup backup --input ./example.txt
 ```
 
 程序会提示交互输入密码。
+
+如果参数组合触发风险提示，程序会显示 warning 并要求再次确认；默认回答为 `No`，不确认则本次备份会被取消。
 
 输出示例：
 
@@ -65,7 +53,7 @@ rsbackup backup --input ./example.txt --shares 24 --threshold 20
 ...
 ```
 
-## 恢复
+### 2. 恢复
 
 只需要任意一个分片文件或 `.rsmeta` 文件：
 
@@ -79,9 +67,17 @@ rsbackup restore --input ./<encrypted-prefix>.rs.007 --password my-secret
 rsbackup restore --input ./<encrypted-prefix>.rsmeta
 ```
 
-## 实现说明
+## 构建
+
+```bash
+make
+```
+默认会构建全部发布版本
+
+## 额外说明
 
 - 文件内容：先使用 AES-256-GCM 加密，再进行 Reed-Solomon 切片编码
 - 文件名：使用同一主密钥加密，并转换为文件系统安全前缀
 - 元数据：保存 KDF 参数、阈值、原始文件大小、加密后的文件名等
 - 分片文件：带有轻量头部，支持从任意分片识别备份集合
+- 存储开销大致与 `shares / threshold` 成正比；`shares - threshold` 越小，可容忍的分片丢失数量越少
