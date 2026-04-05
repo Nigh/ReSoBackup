@@ -1,7 +1,7 @@
 # Reed-Solomon Backup
 
 > [!WARNING]
-> 这是一个可用的最小版本，适合本地加密备份与恢复
+> 这是一个实现 [这个帖子的需求](https://meta.appinn.net/t/topic/83595) 的可用的最小版本，适合本地加密备份与恢复
 
 一个使用 Go 编写的命令行工具，用于：
 
