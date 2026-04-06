@@ -39,8 +39,8 @@ func main() {
 func runBackup(args []string) error {
 	fs := flag.NewFlagSet("backup", flag.ContinueOnError)
 	input := fs.String("input", "", "path to source file")
-	shares := fs.Int("shares", 0, "total number of shares (21~256)")
-	threshold := fs.Int("threshold", 0, "minimum shares required to restore (>80% of shares)")
+	shares := fs.Int("shares", 8, "total number of shares (3~128, default: 8)")
+	threshold := fs.Int("threshold", 5, "minimum shares required to restore (1~shares, default: 5)")
 	password := fs.String("password", "", "backup password (optional, prompt if empty)")
 	outDir := fs.String("out-dir", "", "output directory (default: source file directory)")
 	if err := fs.Parse(args); err != nil {
@@ -76,11 +76,12 @@ func usage() {
 	fmt.Println(`Reed-Solomon encrypted backup tool
 
 Usage:
-  rsbackup backup  --input <file> --shares 24 --threshold 20 [--password <pwd>] [--out-dir <dir>]
+	  rsbackup backup  --input <file> [--shares 8] [--threshold 5] [--password <pwd>] [--out-dir <dir>]
   rsbackup restore --input <any .rs.NNN or .rsmeta file> [--password <pwd>] [--out-dir <dir>]
 
 Notes:
-  - shares must be > 20 and <= 256
-  - threshold must be > 80% of shares and <= shares
+	  - shares must be between 3 and 128
+	  - threshold must be between 1 and shares
+	  - risky share/threshold combinations require interactive confirmation
   - password can be provided by flag or entered interactively`)
 }
