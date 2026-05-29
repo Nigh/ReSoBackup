@@ -1,20 +1,32 @@
 package main
 
 import (
+	"embed"
 	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 
 	"reed-solomon-backup/internal/app"
 )
 
+//go:embed all:frontend/dist
+var assets embed.FS
+
 func main() {
-	if len(os.Args) < 2 {
-		usage()
-		os.Exit(1)
+	if len(os.Args) > 1 {
+		runCLI()
+		return
 	}
 
+	wailsApp := createApp()
+	if err := wailsApp.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func runCLI() {
 	var err error
 	switch os.Args[1] {
 	case "backup":
@@ -76,12 +88,13 @@ func usage() {
 	fmt.Println(`Reed-Solomon encrypted backup tool
 
 Usage:
-	  rsbackup backup  --input <file> [--shares 8] [--threshold 5] [--password <pwd>] [--out-dir <dir>]
+  rsbackup                          Launch GUI (no arguments)
+  rsbackup backup  --input <file> [--shares 8] [--threshold 5] [--password <pwd>] [--out-dir <dir>]
   rsbackup restore --input <any .rs.NNN or .rsmeta file> [--password <pwd>] [--out-dir <dir>]
 
 Notes:
-	  - shares must be between 3 and 128
-	  - threshold must be between 1 and shares
-	  - risky share/threshold combinations require interactive confirmation
+  - shares must be between 3 and 128
+  - threshold must be between 1 and shares
+  - risky share/threshold combinations require interactive confirmation
   - password can be provided by flag or entered interactively`)
 }
