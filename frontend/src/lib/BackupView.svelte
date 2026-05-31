@@ -6,8 +6,8 @@ const MIN_SHARES = 3;
 const MAX_SHARES = 128;
 const SLIDER_MAX = 1000;
 
-const SPLIT_POS = 800;
-const SPLIT_VAL = 64;
+const SPLIT_POS = 500;
+const SPLIT_VAL = 16;
 
 function valueFromPos(pos) {
   if (pos <= SPLIT_POS) {
