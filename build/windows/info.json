@@ -5,11 +5,11 @@
 	"info": {
 		"0000": {
 			"ProductVersion": "0.1.0",
-			"CompanyName": "My Company",
-			"FileDescription": "A rsbackup-temp application",
-			"LegalCopyright": "© 2026, My Company",
-			"ProductName": "My Product",
-			"Comments": "This is a comment"
+			"CompanyName": "ReSo Backup",
+			"FileDescription": "ReSo Backup - Reed-Solomon Encrypted Backup Tool",
+			"LegalCopyright": "© 2026, ReSo Backup",
+			"ProductName": "ReSo Backup",
+			"Comments": "AES-256-GCM + Reed-Solomon erasure coding"
 		}
 	}
 }

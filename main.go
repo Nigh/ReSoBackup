@@ -55,16 +55,24 @@ func runBackup(args []string) error {
 	threshold := fs.Int("threshold", 5, "minimum shares required to restore (1~shares, default: 5)")
 	password := fs.String("password", "", "backup password (optional, prompt if empty)")
 	outDir := fs.String("out-dir", "", "output directory (default: source file directory)")
+	encrypt := fs.Bool("encrypt", false, "enable AES-256-GCM encryption")
+	encryptFilename := fs.Bool("encrypt-filename", false, "encrypt the original filename (requires --encrypt)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 
+	if *encryptFilename && !*encrypt {
+		return errors.New("--encrypt-filename requires --encrypt")
+	}
+
 	return app.RunBackup(app.BackupOptions{
-		InputPath: *input,
-		Shares:    *shares,
-		Threshold: *threshold,
-		Password:  *password,
-		OutputDir: *outDir,
+		InputPath:       *input,
+		Shares:          *shares,
+		Threshold:       *threshold,
+		Password:        *password,
+		OutputDir:       *outDir,
+		Encrypt:         *encrypt,
+		EncryptFilename: *encryptFilename,
 	})
 }
 
@@ -85,16 +93,18 @@ func runRestore(args []string) error {
 }
 
 func usage() {
-	fmt.Println(`Reed-Solomon encrypted backup tool
+	fmt.Println(`ReSo Backup - Reed-Solomon encrypted backup tool
 
 Usage:
   rsbackup                          Launch GUI (no arguments)
-  rsbackup backup  --input <file> [--shares 8] [--threshold 5] [--password <pwd>] [--out-dir <dir>]
+  rsbackup backup  --input <file> [--shares 8] [--threshold 5] [--password <pwd>] [--out-dir <dir>] [--encrypt] [--encrypt-filename]
   rsbackup restore --input <any .rs.NNN or .rsmeta file> [--password <pwd>] [--out-dir <dir>]
 
 Notes:
   - shares must be between 3 and 128
   - threshold must be between 1 and shares
   - risky share/threshold combinations require interactive confirmation
+  - --encrypt enables AES-256-GCM encryption (password required)
+  - --encrypt-filename encrypts the original filename (requires --encrypt)
   - password can be provided by flag or entered interactively`)
 }

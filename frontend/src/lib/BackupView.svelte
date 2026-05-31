@@ -29,6 +29,8 @@ let shares = $state(8);
 let threshold = $state(5);
 let storedRatio = $state(8 / 5);
 let sharesPos = $state(posFromValue(8));
+let encrypt = $state(false);
+let encryptFilename = $state(true);
 let password = $state('');
 let showPassword = $state(false);
 let outputDir = $state('');
@@ -125,7 +127,7 @@ async function doBackup() {
     statusMsg = tr.errSelectFile;
     return;
   }
-  if (!password) {
+  if (encrypt && !password) {
     status = 'error';
     statusMsg = tr.errEnterPwd;
     return;
@@ -143,9 +145,14 @@ async function doBackup() {
   statusMsg = '';
 
   try {
-    await BackupService.RunBackup(inputPath, password, outputDir, shares, threshold);
+    await BackupService.RunBackup(inputPath, password, outputDir, shares, threshold, encrypt, encrypt && encryptFilename);
     status = 'success';
-    statusMsg = tr.backupSuccess;
+    if (encrypt && encryptFilename) {
+      const prefix = await BackupService.GetLastBackupPrefix();
+      statusMsg = fmt(tr.backupSuccessEncFN, prefix);
+    } else {
+      statusMsg = tr.backupSuccess;
+    }
   } catch (e) {
     status = 'error';
     statusMsg = e.message || String(e);
@@ -194,9 +201,9 @@ async function doBackup() {
       </h2>
 
       <div class="form-control">
-        <!-- svelte-ignore a11y_label_has_associated_control -->
-        <label class="label">
-          <span class="label-text">{getT().totalShares}:
+        <div class="flex justify-between items-center">
+          <span class="label-text">{getT().totalShares}</span>
+          <div class="flex items-center gap-2">
             <input
               type="number"
               class="input input-xs input-bordered w-16 text-center"
@@ -205,23 +212,23 @@ async function doBackup() {
               value={shares}
               onchange={onSharesInputChange}
             />
-          </span>
-          <span class="label-text-alt text-base-content/50">{MIN_SHARES} ~ {MAX_SHARES}</span>
-        </label>
+            <span class="text-xs text-base-content/40 w-14 text-right">{MIN_SHARES}~{MAX_SHARES}</span>
+          </div>
+        </div>
         <input
           type="range"
           min="0"
           max={SLIDER_MAX}
           value={sharesPos}
           oninput={onSharesSliderChange}
-          class="range range-primary range-sm"
+          class="range range-primary range-sm mt-2"
         />
       </div>
 
       <div class="form-control">
-        <!-- svelte-ignore a11y_label_has_associated_control -->
-        <label class="label">
-          <span class="label-text">{getT().threshold}:
+        <div class="flex justify-between items-center">
+          <span class="label-text">{getT().threshold}</span>
+          <div class="flex items-center gap-2">
             <input
               type="number"
               class="input input-xs input-bordered w-16 text-center"
@@ -230,16 +237,16 @@ async function doBackup() {
               value={threshold}
               onchange={onThresholdInputChange}
             />
-          </span>
-          <span class="label-text-alt text-base-content/50">1 ~ {shares}</span>
-        </label>
+            <span class="text-xs text-base-content/40 w-14 text-right">1~{shares}</span>
+          </div>
+        </div>
         <input
           type="range"
           min="1"
           max={shares}
           value={threshold}
           oninput={onThresholdSliderChange}
-          class="range range-secondary range-sm"
+          class="range range-secondary range-sm mt-2"
         />
       </div>
 
@@ -281,34 +288,56 @@ async function doBackup() {
       </h2>
 
       <div class="form-control">
-        <!-- svelte-ignore a11y_label_has_associated_control -->
-        <label class="label">
-          <span class="label-text">{getT().password}</span>
+        <label class="label cursor-pointer justify-start gap-3">
+          <input type="checkbox" class="checkbox checkbox-sm" bind:checked={encrypt} />
+          <div>
+            <span class="label-text font-medium">{getT().enableEncryption}</span>
+            <p class="text-xs text-base-content/50">{getT().enableEncryptionDesc}</p>
+          </div>
         </label>
-        <div class="join w-full">
-          <input
-            type={showPassword ? 'text' : 'password'}
-            class="input input-bordered join-item flex-1"
-            placeholder={getT().enterPassword}
-            bind:value={password}
-          />
-          <button
-            class="btn btn-square join-item"
-            onclick={() => showPassword = !showPassword}
-          >
-            {#if showPassword}
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-              </svg>
-            {:else}
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            {/if}
-          </button>
-        </div>
       </div>
+
+      {#if encrypt}
+        <div class="form-control ml-6">
+          <label class="label cursor-pointer justify-start gap-3">
+            <input type="checkbox" class="checkbox checkbox-sm checkbox-accent" bind:checked={encryptFilename} />
+            <div>
+              <span class="label-text">{getT().encryptFilename}</span>
+              <p class="text-xs text-base-content/50">{getT().encryptFilenameDesc}</p>
+            </div>
+          </label>
+        </div>
+
+        <div class="form-control">
+          <!-- svelte-ignore a11y_label_has_associated_control -->
+          <label class="label">
+            <span class="label-text">{getT().password}</span>
+          </label>
+          <div class="join w-full">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              class="input input-bordered join-item flex-1"
+              placeholder={getT().enterPassword}
+              bind:value={password}
+            />
+            <button
+              class="btn btn-square join-item"
+              onclick={() => showPassword = !showPassword}
+            >
+              {#if showPassword}
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                </svg>
+              {:else}
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              {/if}
+            </button>
+          </div>
+        </div>
+      {/if}
     </div>
   </div>
 
@@ -354,7 +383,7 @@ async function doBackup() {
   <button
     class="btn btn-primary btn-lg w-full"
     onclick={doBackup}
-    disabled={loading || !inputPath || !password}
+    disabled={loading || !inputPath || (encrypt && !password)}
   >
     {#if loading}
       <span class="loading loading-spinner"></span>

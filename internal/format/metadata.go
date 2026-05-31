@@ -17,6 +17,8 @@ type Metadata struct {
 	Threshold            int     `json:"threshold"`
 	OriginalFileSize     int64   `json:"original_file_size"`
 	EncryptedPayloadSize int64   `json:"encrypted_payload_size"`
-	EncryptedFileName    string  `json:"encrypted_file_name"`
+	EncryptedFileName    string  `json:"encrypted_file_name,omitempty"`
 	Prefix               string  `json:"prefix"`
+	Encrypted            bool    `json:"encrypted"`
+	EncryptFileName      bool    `json:"encrypt_file_name"`
 }

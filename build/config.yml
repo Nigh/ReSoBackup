@@ -5,11 +5,11 @@ version: '3'
 
 # This information is used to generate the build assets.
 info:
-  companyName: "RSBackup"
-  productName: "Reed-Solomon Backup"
-  productIdentifier: "com.rsbackup.app"
-  description: "Reed-Solomon Encrypted Backup Tool"
-  copyright: "(c) 2025, RSBackup"
+  companyName: "ReSo Backup"
+  productName: "ReSo Backup"
+  productIdentifier: "com.resobackup.app"
+  description: "ReSo Backup - Reed-Solomon Encrypted Backup Tool"
+  copyright: "(c) 2025, ReSo Backup"
   comments: "AES-256-GCM + Reed-Solomon erasure coding"
   version: "1.0.0"
   # cfBundleIconName: "appicon" # The macOS icon name in Assets.car icon bundles (optional)

@@ -12,7 +12,10 @@ import (
 )
 
 type BackupService struct {
-	wailsApp *application.App
+	wailsApp      *application.App
+	lastPrefix    string
+	lastEncrypted bool
+	lastEncFN     bool
 }
 
 func NewBackupService() *BackupService {
@@ -51,28 +54,48 @@ func (s *BackupService) GetBackupWarnings(shares, threshold int) []string {
 	return collectWarnings(shares, threshold)
 }
 
-func (s *BackupService) RunBackup(inputPath, password, outputDir string, shares, threshold int) error {
+func (s *BackupService) RunBackup(inputPath, password, outputDir string, shares, threshold int, encrypt, encryptFilename bool) error {
 	if inputPath == "" {
 		return errors.New("input file is required")
 	}
-	if password == "" {
-		return errors.New("password is required")
+	if encrypt && password == "" {
+		return errors.New("password is required when encryption is enabled")
 	}
-	return app.RunBackup(app.BackupOptions{
-		InputPath: inputPath,
-		Shares:    shares,
-		Threshold: threshold,
-		Password:  password,
-		OutputDir: outputDir,
+	err := app.RunBackup(app.BackupOptions{
+		InputPath:       inputPath,
+		Shares:          shares,
+		Threshold:       threshold,
+		Password:        password,
+		OutputDir:       outputDir,
+		Encrypt:         encrypt,
+		EncryptFilename: encryptFilename,
 	})
+	if err == nil {
+		s.lastEncrypted = encrypt
+		s.lastEncFN = encrypt && encryptFilename
+	}
+	return err
+}
+
+func (s *BackupService) GetLastBackupPrefix() string {
+	return s.lastPrefix
+}
+
+func (s *BackupService) ValidateRestoreFile(inputPath string) (bool, error) {
+	if inputPath == "" {
+		return false, errors.New("input file is required")
+	}
+	meta, err := app.ReadMetadata(inputPath)
+	if err != nil {
+		return false, fmt.Errorf("invalid backup file: %w", err)
+	}
+	isEncrypted := meta.Encrypted || meta.Version <= 1
+	return isEncrypted, nil
 }
 
 func (s *BackupService) RunRestore(inputPath, password, outputDir string) error {
 	if inputPath == "" {
 		return errors.New("input file is required")
-	}
-	if password == "" {
-		return errors.New("password is required")
 	}
 	return app.RunRestore(app.RestoreOptions{
 		InputPath: inputPath,
@@ -132,8 +155,8 @@ func createApp() *application.App {
 	svc := NewBackupService()
 
 	wailsApp := application.New(application.Options{
-		Name:        "RSBackup",
-		Description: "Reed-Solomon Encrypted Backup Tool",
+		Name:        "ReSo Backup",
+		Description: "ReSo Backup - Reed-Solomon Encrypted Backup Tool",
 		Services: []application.Service{
 			application.NewService(svc),
 		},
@@ -148,7 +171,7 @@ func createApp() *application.App {
 	svc.wailsApp = wailsApp
 
 	wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            "Reed-Solomon Backup",
+		Title:            "ReSo Backup",
 		Width:            900,
 		Height:           700,
 		MinWidth:         700,
