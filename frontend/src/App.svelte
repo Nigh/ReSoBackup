@@ -22,28 +22,30 @@ let activeTab = $state('backup');
   </header>
 
   <main class="flex-1 flex flex-col">
-    <div class="tabs tabs-border justify-center px-6 pt-4">
-      <button
-        class="tab {activeTab === 'backup' ? 'tab-active' : ''}"
-        onclick={() => activeTab = 'backup'}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-        </svg>
-        {getT().backupTab}
-      </button>
-      <button
-        class="tab {activeTab === 'restore' ? 'tab-active' : ''}"
-        onclick={() => activeTab = 'restore'}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-        </svg>
-        {getT().restoreTab}
-      </button>
+    <div class="flex justify-center pt-6 pb-2">
+      <div class="join bg-base-200 p-1 rounded-box shadow-md">
+        <button
+          class="btn join-item btn-lg {activeTab === 'backup' ? 'btn-primary' : 'btn-ghost text-base-content/60'} min-w-36"
+          onclick={() => activeTab = 'backup'}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          {getT().backupTab}
+        </button>
+        <button
+          class="btn join-item btn-lg {activeTab === 'restore' ? 'btn-secondary' : 'btn-ghost text-base-content/60'} min-w-36"
+          onclick={() => activeTab = 'restore'}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          {getT().restoreTab}
+        </button>
+      </div>
     </div>
 
-    <div class="flex-1 p-6">
+    <div class="flex-1 p-6 pt-2">
       {#if activeTab === 'backup'}
         <BackupView />
       {:else}
