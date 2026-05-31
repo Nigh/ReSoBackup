@@ -22,7 +22,7 @@ let activeTab = $state('backup');
   </header>
 
   <main class="flex-1 flex flex-col">
-    <div class="tabs tabs-border px-6 pt-4">
+    <div class="tabs tabs-border justify-center px-6 pt-4">
       <button
         class="tab {activeTab === 'backup' ? 'tab-active' : ''}"
         onclick={() => activeTab = 'backup'}

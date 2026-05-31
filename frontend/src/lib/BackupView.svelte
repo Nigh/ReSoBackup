@@ -200,53 +200,43 @@ async function doBackup() {
         {getT().rsParams}
       </h2>
 
-      <div class="form-control">
-        <div class="flex justify-between items-center">
-          <span class="label-text">{getT().totalShares}</span>
-          <div class="flex items-center gap-2">
-            <input
-              type="number"
-              class="input input-xs input-bordered w-16 text-center"
-              min={MIN_SHARES}
-              max={MAX_SHARES}
-              value={shares}
-              onchange={onSharesInputChange}
-            />
-            <span class="text-xs text-base-content/40 w-14 text-right">{MIN_SHARES}~{MAX_SHARES}</span>
-          </div>
-        </div>
+      <div class="flex items-center gap-4">
+        <span class="text-sm w-20 shrink-0">{getT().totalShares}</span>
         <input
           type="range"
           min="0"
           max={SLIDER_MAX}
           value={sharesPos}
           oninput={onSharesSliderChange}
-          class="range range-primary range-sm mt-2"
+          class="range range-primary range-sm flex-1"
+        />
+        <input
+          type="number"
+          class="input input-xs input-bordered w-16 text-center shrink-0"
+          min={MIN_SHARES}
+          max={MAX_SHARES}
+          value={shares}
+          onchange={onSharesInputChange}
         />
       </div>
 
-      <div class="form-control">
-        <div class="flex justify-between items-center">
-          <span class="label-text">{getT().threshold}</span>
-          <div class="flex items-center gap-2">
-            <input
-              type="number"
-              class="input input-xs input-bordered w-16 text-center"
-              min="1"
-              max={shares}
-              value={threshold}
-              onchange={onThresholdInputChange}
-            />
-            <span class="text-xs text-base-content/40 w-14 text-right">1~{shares}</span>
-          </div>
-        </div>
+      <div class="flex items-center gap-4">
+        <span class="text-sm w-20 shrink-0">{getT().threshold}</span>
         <input
           type="range"
           min="1"
           max={shares}
           value={threshold}
           oninput={onThresholdSliderChange}
-          class="range range-secondary range-sm mt-2"
+          class="range range-secondary range-sm flex-1"
+        />
+        <input
+          type="number"
+          class="input input-xs input-bordered w-16 text-center shrink-0"
+          min="1"
+          max={shares}
+          value={threshold}
+          onchange={onThresholdInputChange}
         />
       </div>
 
@@ -280,25 +270,19 @@ async function doBackup() {
 
   <div class="card bg-base-200 shadow-xl">
     <div class="card-body space-y-4">
-      <h2 class="card-title text-accent">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <div class="flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
         </svg>
-        {getT().encryption}
-      </h2>
-
-      <div class="form-control">
-        <label class="label cursor-pointer justify-start gap-3">
-          <input type="checkbox" class="checkbox checkbox-sm" bind:checked={encrypt} />
-          <div>
-            <span class="label-text font-medium">{getT().enableEncryption}</span>
-            <p class="text-xs text-base-content/50">{getT().enableEncryptionDesc}</p>
-          </div>
+        <h2 class="card-title text-accent">{getT().encryption}</h2>
+        <label class="label cursor-pointer justify-start gap-2 ml-auto">
+          <input type="checkbox" class="toggle toggle-sm toggle-accent" bind:checked={encrypt} />
+          <span class="label-text text-sm">{getT().enableEncryption}</span>
         </label>
       </div>
 
       {#if encrypt}
-        <div class="form-control ml-6">
+        <div class="form-control ml-8">
           <label class="label cursor-pointer justify-start gap-3">
             <input type="checkbox" class="checkbox checkbox-sm checkbox-accent" bind:checked={encryptFilename} />
             <div>
@@ -308,7 +292,7 @@ async function doBackup() {
           </label>
         </div>
 
-        <div class="form-control">
+        <div class="form-control ml-8">
           <!-- svelte-ignore a11y_label_has_associated_control -->
           <label class="label">
             <span class="label-text">{getT().password}</span>
