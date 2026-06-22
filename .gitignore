@@ -1,1 +1,10 @@
 dist
+node_modules
+frontend/dist
+frontend/node_modules
+frontend/bindings
+*.exe
+build/bin
+
+.kilo
+.task

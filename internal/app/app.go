@@ -23,11 +23,13 @@ import (
 )
 
 type BackupOptions struct {
-	InputPath string
-	Shares    int
-	Threshold int
-	Password  string
-	OutputDir string
+	InputPath       string
+	Shares          int
+	Threshold       int
+	Password        string
+	OutputDir       string
+	Encrypt         bool
+	EncryptFilename bool
 }
 
 type RestoreOptions struct {
@@ -44,9 +46,12 @@ func RunBackup(opts BackupOptions) error {
 		return err
 	}
 
-	password, err := readPasswordIfNeeded(opts.Password, "Enter backup password: ")
-	if err != nil {
-		return err
+	if opts.Encrypt {
+		password, err := readPasswordIfNeeded(opts.Password, "Enter backup password: ")
+		if err != nil {
+			return err
+		}
+		opts.Password = password
 	}
 
 	plain, err := os.ReadFile(opts.InputPath)
@@ -62,30 +67,48 @@ func RunBackup(opts BackupOptions) error {
 		return fmt.Errorf("create output directory: %w", err)
 	}
 
-	salt := make([]byte, 16)
-	if _, err := rand.Read(salt); err != nil {
-		return fmt.Errorf("generate salt: %w", err)
-	}
-	masterKey, err := scrypt.Key([]byte(password), salt, 32768, 8, 1, 32)
-	if err != nil {
-		return fmt.Errorf("derive key: %w", err)
-	}
-
 	originalName := filepath.Base(opts.InputPath)
-	encryptedName, err := cryptox.EncryptToString(masterKey, []byte(originalName))
-	if err != nil {
-		return fmt.Errorf("encrypt file name: %w", err)
+	var salt []byte
+	var masterKey []byte
+	var encryptedName string
+	var prefix string
+
+	if opts.Encrypt {
+		salt = make([]byte, 16)
+		if _, err := rand.Read(salt); err != nil {
+			return fmt.Errorf("generate salt: %w", err)
+		}
+		masterKey, err = scrypt.Key([]byte(opts.Password), salt, 32768, 8, 1, 32)
+		if err != nil {
+			return fmt.Errorf("derive key: %w", err)
+		}
+
+		if opts.EncryptFilename {
+			encryptedName, err = cryptox.EncryptToString(masterKey, []byte(originalName))
+			if err != nil {
+				return fmt.Errorf("encrypt file name: %w", err)
+			}
+			prefix = safeName(encryptedName)
+		} else {
+			prefix = sanitizeFilename(originalName)
+		}
+	} else {
+		prefix = sanitizeFilename(originalName)
 	}
-	prefix := safeName(encryptedName)
 
 	batchID := make([]byte, 16)
 	if _, err := rand.Read(batchID); err != nil {
 		return fmt.Errorf("generate batch id: %w", err)
 	}
 
-	payload, err := cryptox.Encrypt(masterKey, plain)
-	if err != nil {
-		return fmt.Errorf("encrypt file content: %w", err)
+	var payload []byte
+	if opts.Encrypt {
+		payload, err = cryptox.Encrypt(masterKey, plain)
+		if err != nil {
+			return fmt.Errorf("encrypt file content: %w", err)
+		}
+	} else {
+		payload = plain
 	}
 
 	shares, err := rs.Encode(payload, opts.Shares, opts.Threshold)
@@ -94,7 +117,7 @@ func RunBackup(opts BackupOptions) error {
 	}
 
 	meta := format.Metadata{
-		Version:              1,
+		Version:              2,
 		BatchID:              base64.RawURLEncoding.EncodeToString(batchID),
 		Salt:                 base64.RawURLEncoding.EncodeToString(salt),
 		KDF:                  format.KDFInfo{Name: "scrypt", N: 32768, R: 8, P: 1, KeyLen: 32},
@@ -104,6 +127,8 @@ func RunBackup(opts BackupOptions) error {
 		EncryptedFileName:    encryptedName,
 		EncryptedPayloadSize: int64(len(payload)),
 		Prefix:               prefix,
+		Encrypted:            opts.Encrypt,
+		EncryptFileName:      opts.Encrypt && opts.EncryptFilename,
 	}
 
 	metaBytes, err := json.MarshalIndent(meta, "", "  ")
@@ -134,10 +159,6 @@ func RunRestore(opts RestoreOptions) error {
 	if opts.InputPath == "" {
 		return errors.New("--input is required")
 	}
-	password, err := readPasswordIfNeeded(opts.Password, "Enter restore password: ")
-	if err != nil {
-		return err
-	}
 
 	metaPath, prefix, dir, err := discoverSet(opts.InputPath)
 	if err != nil {
@@ -153,20 +174,36 @@ func RunRestore(opts RestoreOptions) error {
 		return fmt.Errorf("parse metadata: %w", err)
 	}
 
-	salt, err := base64.RawURLEncoding.DecodeString(meta.Salt)
-	if err != nil {
-		return fmt.Errorf("decode salt: %w", err)
-	}
-	masterKey, err := scrypt.Key([]byte(password), salt, meta.KDF.N, meta.KDF.R, meta.KDF.P, meta.KDF.KeyLen)
-	if err != nil {
-		return fmt.Errorf("derive key: %w", err)
+	isEncrypted := meta.Encrypted || meta.Version <= 1
+	isEncryptFilename := (meta.EncryptFileName) || (meta.Version <= 1 && meta.EncryptedFileName != "")
+
+	var masterKey []byte
+	if isEncrypted {
+		password, err := readPasswordIfNeeded(opts.Password, "Enter restore password: ")
+		if err != nil {
+			return err
+		}
+
+		salt, err := base64.RawURLEncoding.DecodeString(meta.Salt)
+		if err != nil {
+			return fmt.Errorf("decode salt: %w", err)
+		}
+		masterKey, err = scrypt.Key([]byte(password), salt, meta.KDF.N, meta.KDF.R, meta.KDF.P, meta.KDF.KeyLen)
+		if err != nil {
+			return fmt.Errorf("derive key: %w", err)
+		}
 	}
 
-	originalNameBytes, err := cryptox.DecryptString(masterKey, meta.EncryptedFileName)
-	if err != nil {
-		return errors.New("invalid password or corrupted metadata")
+	var originalName string
+	if isEncryptFilename && meta.EncryptedFileName != "" {
+		originalNameBytes, err := cryptox.DecryptString(masterKey, meta.EncryptedFileName)
+		if err != nil {
+			return errors.New("invalid password or corrupted metadata")
+		}
+		originalName = string(originalNameBytes)
+	} else {
+		originalName = meta.Prefix
 	}
-	originalName := string(originalNameBytes)
 
 	shardFiles, err := filepath.Glob(filepath.Join(dir, prefix+".rs.*"))
 	if err != nil {
@@ -200,9 +237,15 @@ func RunRestore(opts RestoreOptions) error {
 	if err != nil {
 		return err
 	}
-	plain, err := cryptox.Decrypt(masterKey, payload)
-	if err != nil {
-		return errors.New("failed to decrypt payload, password may be incorrect or shares corrupted")
+
+	var plain []byte
+	if isEncrypted {
+		plain, err = cryptox.Decrypt(masterKey, payload)
+		if err != nil {
+			return errors.New("failed to decrypt payload, password may be incorrect or shares corrupted")
+		}
+	} else {
+		plain = payload
 	}
 	if int64(len(plain)) != meta.OriginalFileSize {
 		plain = plain[:min(len(plain), int(meta.OriginalFileSize))]
@@ -315,6 +358,38 @@ func safeName(s string) string {
 	s = strings.ReplaceAll(s, "/", "_")
 	s = strings.ReplaceAll(s, "+", "-")
 	return s
+}
+
+func sanitizeFilename(name string) string {
+	replacer := strings.NewReplacer(
+		"/", "_",
+		"\\", "_",
+		":", "_",
+		"*", "_",
+		"?", "_",
+		"\"", "_",
+		"<", "_",
+		">", "_",
+		"|", "_",
+		" ", "_",
+	)
+	return replacer.Replace(name)
+}
+
+func ReadMetadata(inputPath string) (*format.Metadata, error) {
+	metaPath, _, _, err := discoverSet(inputPath)
+	if err != nil {
+		return nil, err
+	}
+	metaBytes, err := os.ReadFile(metaPath)
+	if err != nil {
+		return nil, fmt.Errorf("read metadata: %w", err)
+	}
+	var meta format.Metadata
+	if err := json.Unmarshal(metaBytes, &meta); err != nil {
+		return nil, fmt.Errorf("parse metadata: %w", err)
+	}
+	return &meta, nil
 }
 
 func discoverSet(input string) (metaPath, prefix, dir string, err error) {
