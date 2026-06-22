@@ -8,7 +8,11 @@ GO ?= go
 
 DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
-LDFLAGS := -s -w
+ifeq ($(shell go env GOOS),windows)
+    LDFLAGS := -s -w -H windowsgui
+else
+    LDFLAGS := -s -w
+endif
 GOFLAGS := -trimpath -buildvcs=false
 
 .PHONY: build-all clean release-dirs
