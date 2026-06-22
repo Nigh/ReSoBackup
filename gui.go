@@ -1,6 +1,9 @@
+//go:build !cli
+
 package main
 
 import (
+	"embed"
 	"errors"
 	"fmt"
 	"os"
@@ -10,6 +13,9 @@ import (
 
 	"reed-solomon-backup/internal/app"
 )
+
+//go:embed all:frontend/dist
+var assets embed.FS
 
 type BackupService struct {
 	wailsApp      *application.App
