@@ -136,7 +136,7 @@ The program picks up local shards 004, 005 and the downloaded 001 — 3 shards t
 
 ### Installation
 
-Download the binary for your platform from the [Releases](https://github.com/user/Reed-Solomon-Backup/releases) page.
+Download the binary for your platform from the [Releases](https://github.com/Nigh/ReSoBackup/releases) page.
 
 ### GUI Mode
 

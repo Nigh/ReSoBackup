@@ -1,10 +1,10 @@
 {
 	"fixed": {
-		"file_version": "0.1.0"
+		"file_version": "2.0.1"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "0.1.0",
+			"ProductVersion": "2.0.1",
 			"CompanyName": "ReSo Backup",
 			"FileDescription": "ReSo Backup - Reed-Solomon Encrypted Backup Tool",
 			"LegalCopyright": "© 2026, ReSo Backup",

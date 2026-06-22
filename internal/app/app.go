@@ -38,25 +38,25 @@ type RestoreOptions struct {
 	OutputDir string
 }
 
-func RunBackup(opts BackupOptions) error {
+func RunBackup(opts BackupOptions) (string, error) {
 	if err := validateBackupOptions(opts); err != nil {
-		return err
+		return "", err
 	}
 	if err := confirmBackupWarnings(opts); err != nil {
-		return err
+		return "", err
 	}
 
 	if opts.Encrypt {
 		password, err := readPasswordIfNeeded(opts.Password, "Enter backup password: ")
 		if err != nil {
-			return err
+			return "", err
 		}
 		opts.Password = password
 	}
 
 	plain, err := os.ReadFile(opts.InputPath)
 	if err != nil {
-		return fmt.Errorf("read input file: %w", err)
+		return "", fmt.Errorf("read input file: %w", err)
 	}
 
 	outputDir := opts.OutputDir
@@ -64,7 +64,7 @@ func RunBackup(opts BackupOptions) error {
 		outputDir = filepath.Dir(opts.InputPath)
 	}
 	if err := os.MkdirAll(outputDir, 0o755); err != nil {
-		return fmt.Errorf("create output directory: %w", err)
+		return "", fmt.Errorf("create output directory: %w", err)
 	}
 
 	originalName := filepath.Base(opts.InputPath)
@@ -76,17 +76,17 @@ func RunBackup(opts BackupOptions) error {
 	if opts.Encrypt {
 		salt = make([]byte, 16)
 		if _, err := rand.Read(salt); err != nil {
-			return fmt.Errorf("generate salt: %w", err)
+			return "", fmt.Errorf("generate salt: %w", err)
 		}
 		masterKey, err = scrypt.Key([]byte(opts.Password), salt, 32768, 8, 1, 32)
 		if err != nil {
-			return fmt.Errorf("derive key: %w", err)
+			return "", fmt.Errorf("derive key: %w", err)
 		}
 
 		if opts.EncryptFilename {
 			encryptedName, err = cryptox.EncryptToString(masterKey, []byte(originalName))
 			if err != nil {
-				return fmt.Errorf("encrypt file name: %w", err)
+				return "", fmt.Errorf("encrypt file name: %w", err)
 			}
 			prefix = safeName(encryptedName)
 		} else {
@@ -98,14 +98,14 @@ func RunBackup(opts BackupOptions) error {
 
 	batchID := make([]byte, 16)
 	if _, err := rand.Read(batchID); err != nil {
-		return fmt.Errorf("generate batch id: %w", err)
+		return "", fmt.Errorf("generate batch id: %w", err)
 	}
 
 	var payload []byte
 	if opts.Encrypt {
 		payload, err = cryptox.Encrypt(masterKey, plain)
 		if err != nil {
-			return fmt.Errorf("encrypt file content: %w", err)
+			return "", fmt.Errorf("encrypt file content: %w", err)
 		}
 	} else {
 		payload = plain
@@ -113,7 +113,7 @@ func RunBackup(opts BackupOptions) error {
 
 	shares, err := rs.Encode(payload, opts.Shares, opts.Threshold)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	meta := format.Metadata{
@@ -133,26 +133,26 @@ func RunBackup(opts BackupOptions) error {
 
 	metaBytes, err := json.MarshalIndent(meta, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal metadata: %w", err)
+		return "", fmt.Errorf("marshal metadata: %w", err)
 	}
 	metaPath := filepath.Join(outputDir, prefix+".rsmeta")
 	if err := os.WriteFile(metaPath, metaBytes, 0o600); err != nil {
-		return fmt.Errorf("write metadata: %w", err)
+		return "", fmt.Errorf("write metadata: %w", err)
 	}
 
 	for i, shard := range shares {
 		shareFile := filepath.Join(outputDir, fmt.Sprintf("%s.rs.%03d", prefix, i+1))
 		wrapped, err := wrapShard(batchID, i, opts.Shares, opts.Threshold, shard)
 		if err != nil {
-			return err
+			return "", err
 		}
 		if err := os.WriteFile(shareFile, wrapped, 0o600); err != nil {
-			return fmt.Errorf("write share %d: %w", i+1, err)
+			return "", fmt.Errorf("write share %d: %w", i+1, err)
 		}
 	}
 
 	fmt.Printf("Backup created successfully.\nMetadata: %s\nShares prefix: %s\n", metaPath, filepath.Join(outputDir, prefix+".rs.###"))
-	return nil
+	return prefix, nil
 }
 
 func RunRestore(opts RestoreOptions) error {

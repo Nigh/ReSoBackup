@@ -61,7 +61,7 @@ func runBackup(args []string) error {
 		return errors.New("--encrypt-filename requires --encrypt")
 	}
 
-	return app.RunBackup(app.BackupOptions{
+	_, err := app.RunBackup(app.BackupOptions{
 		InputPath:       *input,
 		Shares:          *shares,
 		Threshold:       *threshold,
@@ -70,6 +70,7 @@ func runBackup(args []string) error {
 		Encrypt:         *encrypt,
 		EncryptFilename: *encryptFilename,
 	})
+	return err
 }
 
 func runRestore(args []string) error {
