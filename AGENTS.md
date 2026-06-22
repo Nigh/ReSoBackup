@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## IMPORTANT: Keep This File Updated
+
+> **After making any changes to the project (code, structure, dependencies, build commands, etc.), you MUST update this AGENTS.md file to reflect the current state of the project.** This file serves as the single source of truth for agents working on this codebase. Keeping it accurate ensures future sessions can quickly understand the project without re-reading all source files.
+
 ## Project Overview
 
 **ReSo Backup** is a Reed-Solomon encrypted backup tool built with Go + Wails v3 + Svelte 5.
