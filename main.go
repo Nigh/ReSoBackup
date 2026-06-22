@@ -1,7 +1,6 @@
 package main
 
 import (
-	"embed"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,9 +9,6 @@ import (
 
 	"reed-solomon-backup/internal/app"
 )
-
-//go:embed all:frontend/dist
-var assets embed.FS
 
 func main() {
 	if len(os.Args) > 1 {

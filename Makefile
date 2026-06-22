@@ -17,7 +17,7 @@ TARGETS := \
 	darwin/arm64
 
 LDFLAGS := -s -w
-GOFLAGS := -trimpath -buildvcs=false
+GOFLAGS := -trimpath -buildvcs=false -tags cli
 
 .PHONY: build-all clean release-dirs
 
