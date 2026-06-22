@@ -9,8 +9,20 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: rsbackup_linux_amd64
+            deps: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
+          - os: windows-latest
+            artifact: rsbackup_windows_amd64.exe
+            deps: echo "Windows dependencies pre-installed"
+          - os: macos-latest
+            artifact: rsbackup_darwin_arm64
+            deps: echo "macOS dependencies pre-installed"
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -30,9 +42,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
+        run: ${{ matrix.deps }}
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
@@ -44,8 +54,28 @@ jobs:
         working-directory: frontend
         run: npm ci && npm run build
 
-      - name: Build release artifacts
+      - name: Build release artifact
         run: make
+
+      - name: Rename artifact
+        shell: bash
+        run: mv dist/rsbackup* dist/${{ matrix.artifact }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
