@@ -15,12 +15,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Go test
+        run: go test ./...
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest

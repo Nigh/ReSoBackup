@@ -65,7 +65,7 @@ func (s *BackupService) RunBackup(inputPath, password, outputDir string, shares,
 	if encrypt && password == "" {
 		return errors.New("password is required when encryption is enabled")
 	}
-	err := app.RunBackup(app.BackupOptions{
+	prefix, err := app.RunBackup(app.BackupOptions{
 		InputPath:       inputPath,
 		Shares:          shares,
 		Threshold:       threshold,
@@ -75,6 +75,7 @@ func (s *BackupService) RunBackup(inputPath, password, outputDir string, shares,
 		EncryptFilename: encryptFilename,
 	})
 	if err == nil {
+		s.lastPrefix = prefix
 		s.lastEncrypted = encrypt
 		s.lastEncFN = encrypt && encryptFilename
 	}

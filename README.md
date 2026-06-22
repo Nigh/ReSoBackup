@@ -134,7 +134,7 @@ rsbackup restore --input important.docx.rs.004 --password "my-secret"
 
 ### 安装
 
-从 [Releases](https://github.com/user/Reed-Solomon-Backup/releases) 页面下载对应平台的可执行文件。
+从 [Releases](https://github.com/Nigh/ReSoBackup/releases) 页面下载对应平台的可执行文件。
 
 ### GUI 模式
 
