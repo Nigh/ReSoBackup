@@ -11,7 +11,7 @@ info:
   description: "ReSo Backup - Reed-Solomon Encrypted Backup Tool"
   copyright: "(c) 2025, ReSo Backup"
   comments: "AES-256-GCM + Reed-Solomon erasure coding"
-  version: "2.0.1"
+  version: "2.0.2"
   # cfBundleIconName: "appicon" # The macOS icon name in Assets.car icon bundles (optional)
   #                               # Should match the name of your .icon file without the extension
   #                               # If not set and Assets.car exists, defaults to "appicon"
