@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="build/appicon.png" alt="ReSo Backup" width="128" height="128">
+  <img src="resources/icon.png" alt="ReSo Backup" width="128" height="128">
 </p>
 
 <h1 align="center">ReSo Backup</h1>
@@ -223,24 +223,42 @@ rsbackup restore --input <any .rs.NNN or .rsmeta file> [--password <pwd>] [--out
 | 组件 | 技术 |
 |------|------|
 | 后端 | Go |
-| GUI 框架 | Wails v3 |
-| 前端 | Svelte 5 + DaisyUI 5 + Tailwind CSS 4 |
+| GUI 框架 | mygo Native UI（Go 自绘界面，无 WebView） |
+| 视觉主题 | Xianii 暗色 / 浅色主题，Go token 映射 |
 | 加密 | AES-256-GCM + scrypt KDF |
 | 纠删码 | klauspost/reedsolomon |
 | 构建 | Make + Taskfile |
 
 ## 构建
 
+需要 **Go 1.27.1 或更新版本**。Native UI 无需 Node.js、npm、Wails 或 CGO。Linux 运行 GUI 需要 GTK 3、Cairo、GDK-Pixbuf 和可用的桌面显示环境；Native UI 本身不加载 WebKitGTK，但 mygo 0.3.2 生成的 `.deb` 和安装脚本仍声明 / 检查 WebKitGTK 依赖。Debian / Ubuntu 可安装 `libgtk-3-0`（新系统为 `libgtk-3-0t64`），其依赖会一并安装。
+
 ```bash
-# 构建当前平台
-task build
-
-# 构建全部平台
+# 构建当前平台（GUI + CLI）
 make
+# 或 task build
 
-# 开发模式（热重载）
-wails3 dev -config ./build/config.yml -port 9245
+# 编译 Linux amd64、Windows amd64、macOS arm64 可执行文件
+make build-all
+
+# 只构建 CLI，无桌面运行依赖
+make cli
+
+# 开发模式：Go 文件变更后重新构建并启动
+go tool mygo dev
+
+# 当前平台打包（Linux: .deb / .tar.gz；macOS: .app / .dmg；Windows: 安装程序）
+go tool mygo build
+
+# 校验与测试
+make test
 ```
+
+Windows 原始可执行文件保留控制台，方便使用 CLI；桌面安装包由 mygo 生成。跨平台打包可使用 `go tool mygo build -platform darwin/universal,windows/amd64,linux/amd64`，macOS 签名与 DMG 生成需要 macOS。分发前仍需配置正式签名 / 公证。
+
+界面提供中英文切换及 Xianii 暗色 / 浅色切换。风险参数在界面中确认；耗时操作在后台执行，操作期间禁用表单并阻止关闭或退出。字体使用系统字体及中文回退，不依赖在线字体。
+
+主题来源及许可证见 [third_party/xianii-theme](third_party/xianii-theme/README.md)。GUI 迁移不改变 CLI 参数、v2 备份格式或 v1 恢复兼容性。
 
 ## 额外说明
 

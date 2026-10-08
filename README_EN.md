@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="build/appicon.png" alt="ReSo Backup" width="128" height="128">
+  <img src="resources/icon.png" alt="ReSo Backup" width="128" height="128">
 </p>
 
 <h1 align="center">ReSo Backup</h1>
@@ -225,24 +225,42 @@ rsbackup restore --input <any .rs.NNN or .rsmeta file> [--password <pwd>] [--out
 | Component | Technology |
 |-----------|------------|
 | Backend | Go |
-| GUI Framework | Wails v3 |
-| Frontend | Svelte 5 + DaisyUI 5 + Tailwind CSS 4 |
+| GUI Framework | mygo Native UI (Go UI, no WebView) |
+| Theme | Xianii dark / light themes mapped to Go tokens |
 | Encryption | AES-256-GCM + scrypt KDF |
 | Erasure Coding | klauspost/reedsolomon |
 | Build | Make + Taskfile |
 
-## Building
+## Build
+
+Requires **Go 1.27.1 or later**. Native UI needs no Node.js, npm, Wails or CGO. On Linux the GUI requires GTK 3, Cairo, GDK-Pixbuf and a desktop display; Native windows do not load WebKitGTK, but mygo 0.3.2 still declares / checks it in generated Debian packages and installation scripts. On Debian / Ubuntu install `libgtk-3-0` (`libgtk-3-0t64` on newer systems), which pulls in the runtime dependencies.
 
 ```bash
-# Build for current platform
-task build
-
-# Build for all platforms
+# Current platform (GUI + CLI)
 make
+# Or task build
 
-# Development mode (hot reload)
-wails3 dev -config ./build/config.yml -port 9245
+# Linux amd64, Windows amd64 and macOS arm64 executables
+make build-all
+
+# CLI only, without desktop runtime dependencies
+make cli
+
+# Rebuild and restart when Go files change
+go tool mygo dev
+
+# Package the current platform (.deb / .tar.gz, .app / .dmg, or Windows installer)
+go tool mygo build
+
+# Checks and tests
+make test
 ```
+
+Raw Windows executables retain a console for CLI use; mygo creates desktop installers. Cross-platform packaging uses `go tool mygo build -platform darwin/universal,windows/amd64,linux/amd64`; macOS signing and DMG creation require macOS. Configure release signing / notarization before distribution.
+
+The interface supports English / Chinese and Xianii dark / light themes. Risky parameters are confirmed in the interface. Operations run in the background, with forms and closing / quitting disabled until completion. Fonts use system fonts and Chinese fallback without online font downloads.
+
+Theme provenance and licensing: [third_party/xianii-theme](third_party/xianii-theme/README.md). The GUI migration preserves CLI flags, the v2 backup format and v1 restore compatibility.
 
 ## Notes
 

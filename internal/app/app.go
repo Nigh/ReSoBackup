@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	"golang.org/x/crypto/scrypt"
-	"golang.org/x/term"
 
 	"reed-solomon-backup/internal/cryptox"
 	"reed-solomon-backup/internal/format"
@@ -39,19 +38,14 @@ type RestoreOptions struct {
 }
 
 func RunBackup(opts BackupOptions) (string, error) {
-	if err := validateBackupOptions(opts); err != nil {
-		return "", err
-	}
-	if err := confirmBackupWarnings(opts); err != nil {
+	if err := ValidateBackupOptions(opts); err != nil {
 		return "", err
 	}
 
 	if opts.Encrypt {
-		password, err := readPasswordIfNeeded(opts.Password, "Enter backup password: ")
-		if err != nil {
-			return "", err
+		if opts.Password == "" {
+			return "", errors.New("password is required when encryption is enabled")
 		}
-		opts.Password = password
 	}
 
 	plain, err := os.ReadFile(opts.InputPath)
@@ -179,16 +173,15 @@ func RunRestore(opts RestoreOptions) error {
 
 	var masterKey []byte
 	if isEncrypted {
-		password, err := readPasswordIfNeeded(opts.Password, "Enter restore password: ")
-		if err != nil {
-			return err
+		if opts.Password == "" {
+			return errors.New("password is required for encrypted backups")
 		}
 
 		salt, err := base64.RawURLEncoding.DecodeString(meta.Salt)
 		if err != nil {
 			return fmt.Errorf("decode salt: %w", err)
 		}
-		masterKey, err = scrypt.Key([]byte(password), salt, meta.KDF.N, meta.KDF.R, meta.KDF.P, meta.KDF.KeyLen)
+		masterKey, err = scrypt.Key([]byte(opts.Password), salt, meta.KDF.N, meta.KDF.R, meta.KDF.P, meta.KDF.KeyLen)
 		if err != nil {
 			return fmt.Errorf("derive key: %w", err)
 		}
@@ -267,7 +260,7 @@ func RunRestore(opts RestoreOptions) error {
 	return nil
 }
 
-func validateBackupOptions(opts BackupOptions) error {
+func ValidateBackupOptions(opts BackupOptions) error {
 	if opts.InputPath == "" {
 		return errors.New("--input is required")
 	}
@@ -290,36 +283,10 @@ func validateBackupOptions(opts BackupOptions) error {
 	return nil
 }
 
-func confirmBackupWarnings(opts BackupOptions) error {
-	warnings := collectBackupWarnings(opts)
-	if len(warnings) == 0 {
+func BackupWarnings(opts BackupOptions) []string {
+	if opts.Shares < 3 || opts.Shares > 128 || opts.Threshold < 1 || opts.Threshold > opts.Shares {
 		return nil
 	}
-	if !term.IsTerminal(int(os.Stdin.Fd())) {
-		return fmt.Errorf("backup parameters require confirmation in interactive mode: %s", strings.Join(warnings, "; "))
-	}
-
-	fmt.Fprintln(os.Stderr, "Warnings:")
-	for _, warning := range warnings {
-		fmt.Fprintf(os.Stderr, "- %s\n", warning)
-	}
-	fmt.Fprint(os.Stderr, "Continue anyway? [y/N]: ")
-
-	var input string
-	if _, err := fmt.Fscanln(os.Stdin, &input); err != nil {
-		if errors.Is(err, io.EOF) {
-			return errors.New("backup cancelled: confirmation declined")
-		}
-		return fmt.Errorf("read confirmation: %w", err)
-	}
-	answer := strings.ToLower(strings.TrimSpace(input))
-	if answer != "y" && answer != "yes" {
-		return errors.New("backup cancelled: confirmation declined")
-	}
-	return nil
-}
-
-func collectBackupWarnings(opts BackupOptions) []string {
 	parity := opts.Shares - opts.Threshold
 	var warnings []string
 
@@ -335,22 +302,6 @@ func collectBackupWarnings(opts BackupOptions) []string {
 	}
 
 	return warnings
-}
-
-func readPasswordIfNeeded(pwd, prompt string) (string, error) {
-	if pwd != "" {
-		return pwd, nil
-	}
-	fmt.Fprint(os.Stderr, prompt)
-	b, err := term.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Fprintln(os.Stderr)
-	if err != nil {
-		return "", fmt.Errorf("read password: %w", err)
-	}
-	if len(b) == 0 {
-		return "", errors.New("password cannot be empty")
-	}
-	return string(b), nil
 }
 
 func safeName(s string) string {

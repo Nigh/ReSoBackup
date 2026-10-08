@@ -1,10 +1,5 @@
-dist
-node_modules
-frontend/dist
-frontend/node_modules
-frontend/bindings
+dist/
+.mygo/
+.task/
+.kilo/
 *.exe
-build/bin
-
-.kilo
-.task

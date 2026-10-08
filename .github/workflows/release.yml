@@ -9,113 +9,56 @@ permissions:
   contents: write
 
 jobs:
-  build-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
-
-      - name: Install Wails CLI
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
-
-      - name: Generate bindings
-        run: wails3 generate bindings
-
-      - name: Build frontend
-        working-directory: frontend
-        run: npm ci && npm run build
-
-      - name: Upload frontend
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: |
-            frontend/dist
-            frontend/bindings
-
   build-binary:
-    needs: build-frontend
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
             artifact: rsbackup_linux_amd64
-            deps: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
           - os: windows-latest
             artifact: rsbackup_windows_amd64.exe
-            deps: echo "Windows dependencies pre-installed"
           - os: macos-latest
             artifact: rsbackup_darwin_arm64
-            deps: echo "macOS dependencies pre-installed"
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Download frontend
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-
-      - name: Install system dependencies
-        run: ${{ matrix.deps }}
-
-      - name: Go vet
-        run: go vet ./...
-
-      - name: Go test
-        run: go test ./...
-
-      - name: Build release artifact
-        run: make
-
-      - name: Rename artifact
+          cache: true
+      - name: Verify
+        run: |
+          go tool mygo vet .
+          go test ./...
+          go test -tags cli ./...
+      - name: Build native application
         shell: bash
-        run: mv dist/rsbackup* dist/${{ matrix.artifact }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        env:
+          CGO_ENABLED: '0'
+        run: go build -trimpath -buildvcs=false -ldflags '-s -w' -o 'dist/${{ matrix.artifact }}' .
+      - name: Set package version
+        shell: bash
+        run: python -c 'import json, os; p="mygo.json"; c=json.load(open(p)); c["version"]=os.environ["GITHUB_REF_NAME"].removeprefix("v"); open(p,"w").write(json.dumps(c, indent=2)+"\n")'
+      - name: Package native application
+        run: go tool mygo build
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: dist/${{ matrix.artifact }}
-
+          path: |
+            dist/${{ matrix.artifact }}
+            dist/packages/**/*.dmg
+            dist/packages/**/*.exe
+            dist/packages/**/*.deb
+            dist/packages/**/*.tar.gz
   release:
     needs: build-binary
     runs-on: ubuntu-latest
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
-
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: dist/**
           generate_release_notes: true

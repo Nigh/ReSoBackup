@@ -1,34 +1,25 @@
 version: '3'
 
-vars:
-  APP_NAME: "rsbackup"
-  BIN_DIR: "bin"
-  PACKAGE_MANAGER: '{{.PACKAGE_MANAGER | default "npm"}}'
-  VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
-
-includes:
-  common: ./build/Taskfile.yml
-  windows: ./build/windows/Taskfile.yml
-  darwin: ./build/darwin/Taskfile.yml
-  linux: ./build/linux/Taskfile.yml
-
 tasks:
   build:
-    summary: Builds the application
+    desc: Build the native application for the current platform
     cmds:
-      - task: "{{OS}}:build"
-
+      - go build -trimpath -ldflags '-s -w' -o dist/rsbackup{{exeExt}} .
+    env:
+      CGO_ENABLED: '0'
   package:
-    summary: Packages a production build of the application
+    desc: Package the native application for the current platform
     cmds:
-      - task: "{{OS}}:package"
-
+      - go tool mygo build
   run:
-    summary: Runs the application
     cmds:
-      - task: "{{OS}}:run"
-
+      - go run .
   dev:
-    summary: Runs the application in development mode
+    desc: Rebuild and restart the native application on changes
     cmds:
-      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+      - go tool mygo dev
+  test:
+    cmds:
+      - go vet ./...
+      - go test ./...
+      - go test -tags cli ./...

@@ -1,0 +1,13 @@
+{
+  "name": "ReSo Backup",
+  "identifier": "com.xianii.resobackup",
+  "version": "2.0.2",
+  "icon": "resources/icon.png",
+  "out": "dist/packages",
+  "resources": ["third_party"],
+  "linux": {
+    "command": "rsbackup",
+    "comment": "Reed-Solomon encrypted backup tool",
+    "categories": ["Utility", "Archiving"]
+  }
+}
