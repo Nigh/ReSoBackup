@@ -27,8 +27,10 @@ ReSo Backup is a Reed-Solomon encrypted backup tool built with Go 1.27.1+ and my
 | Crypto | `internal/cryptox/crypto.go` | AES-256-GCM and base64 helpers |
 | RS | `internal/rs/rs.go` | Reed-Solomon encode/reconstruct |
 | Format | `internal/format/metadata.go` | Metadata JSON structs |
-| Packaging | `mygo.json`, `resources/icon.png` | Native app identity, version, icon and package configuration |
+| Packaging | `mygo.json`, `resources/icon.webp`, `resources/icon.png` | Native app identity, version, icon and package configuration |
 | Theme source | `third_party/xianii-theme/` | Pinned upstream tokens, provenance and MIT license |
+
+The icon source is `resources/icon.webp`, used directly by both READMEs. `resources/icon.png` is a pixel-identical PNG export for mygo v0.3.7 packaging, which only accepts PNG icons. When replacing the source, regenerate the PNG export with its dimensions and transparency preserved.
 
 ## Build & Dev Commands
 

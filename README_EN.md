@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="resources/icon.png" alt="ReSo Backup" width="128" height="128">
+  <img src="resources/icon.webp" alt="ReSo Backup" width="128" height="128">
 </p>
 
 <h1 align="center">ReSo Backup</h1>
