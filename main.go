@@ -16,8 +16,8 @@ func main() {
 		return
 	}
 
-	wailsApp := createApp()
-	if err := wailsApp.Run(); err != nil {
+	desktopApp := createApp()
+	if err := desktopApp.Run(); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -61,7 +61,7 @@ func runBackup(args []string) error {
 		return errors.New("--encrypt-filename requires --encrypt")
 	}
 
-	_, err := app.RunBackup(app.BackupOptions{
+	opts := app.BackupOptions{
 		InputPath:       *input,
 		Shares:          *shares,
 		Threshold:       *threshold,
@@ -69,7 +69,21 @@ func runBackup(args []string) error {
 		OutputDir:       *outDir,
 		Encrypt:         *encrypt,
 		EncryptFilename: *encryptFilename,
-	})
+	}
+	if err := app.ValidateBackupOptions(opts); err != nil {
+		return err
+	}
+	if err := confirmBackupWarnings(opts); err != nil {
+		return err
+	}
+	if opts.Encrypt {
+		pwd, err := readPasswordIfNeeded(opts.Password, "Enter backup password: ")
+		if err != nil {
+			return err
+		}
+		opts.Password = pwd
+	}
+	_, err := app.RunBackup(opts)
 	return err
 }
 
@@ -82,6 +96,20 @@ func runRestore(args []string) error {
 		return err
 	}
 
+	if *input == "" {
+		return errors.New("--input is required")
+	}
+	meta, err := app.ReadMetadata(*input)
+	if err != nil {
+		return err
+	}
+	if meta.Encrypted || meta.Version <= 1 {
+		pwd, err := readPasswordIfNeeded(*password, "Enter restore password: ")
+		if err != nil {
+			return err
+		}
+		*password = pwd
+	}
 	return app.RunRestore(app.RestoreOptions{
 		InputPath: *input,
 		Password:  *password,

@@ -3,6 +3,8 @@ package app
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -170,9 +172,9 @@ func TestValidateBackupOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateBackupOptions(tt.opts)
+			err := ValidateBackupOptions(tt.opts)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("validateBackupOptions: err=%v, wantErr=%v", err, tt.wantErr)
+				t.Fatalf("ValidateBackupOptions: err=%v, wantErr=%v", err, tt.wantErr)
 			}
 		})
 	}
@@ -210,6 +212,84 @@ func TestSanitizeFilename(t *testing.T) {
 		got := sanitizeFilename(tt.input)
 		if got != tt.want {
 			t.Errorf("sanitizeFilename(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
+func TestBackupRestoreWithoutTerminal(t *testing.T) {
+	for _, encrypted := range []bool{false, true} {
+		t.Run(fmt.Sprint(encrypted), func(t *testing.T) {
+			dir := t.TempDir()
+			input := filepath.Join(dir, "original.txt")
+			content := []byte("native GUI backup roundtrip 中文")
+			if err := os.WriteFile(input, content, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			backupDir := filepath.Join(dir, "backup")
+			prefix, err := RunBackup(BackupOptions{InputPath: input, OutputDir: backupDir, Shares: 3, Threshold: 3, Encrypt: encrypted, EncryptFilename: encrypted, Password: "test-password"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			restored := filepath.Join(dir, "restored")
+			if err := RunRestore(RestoreOptions{InputPath: filepath.Join(backupDir, prefix+".rs.001"), OutputDir: restored, Password: "test-password"}); err != nil {
+				t.Fatal(err)
+			}
+			got, err := os.ReadFile(filepath.Join(restored, "original.txt"))
+			if err != nil || !bytes.Equal(got, content) {
+				t.Fatalf("restored %q, error %v", got, err)
+			}
+			if encrypted {
+				metaPath := filepath.Join(backupDir, prefix+".rsmeta")
+				meta, err := ReadMetadata(metaPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				meta.Version, meta.Encrypted, meta.EncryptFileName = 1, false, false
+				encoded, err := json.Marshal(meta)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(metaPath, encoded, 0o600); err != nil {
+					t.Fatal(err)
+				}
+				legacyOutput := filepath.Join(dir, "legacy")
+				if err := RunRestore(RestoreOptions{InputPath: metaPath, OutputDir: legacyOutput, Password: "test-password"}); err != nil {
+					t.Fatal(err)
+				}
+				legacy, err := os.ReadFile(filepath.Join(legacyOutput, "original.txt"))
+				if err != nil || !bytes.Equal(legacy, content) {
+					t.Fatalf("v1 restore: %q, %v", legacy, err)
+				}
+			}
+
+		})
+	}
+}
+
+func TestCoreRequiresEncryptionPassword(t *testing.T) {
+	dir := t.TempDir()
+	input := filepath.Join(dir, "input.txt")
+	if err := os.WriteFile(input, []byte("payload"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	opts := BackupOptions{InputPath: input, OutputDir: filepath.Join(dir, "backup"), Shares: 8, Threshold: 5, Encrypt: true}
+	if _, err := RunBackup(opts); err == nil {
+		t.Fatal("backup accepted empty encryption password")
+	}
+	opts.Password = "password"
+	prefix, err := RunBackup(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := RunRestore(RestoreOptions{InputPath: filepath.Join(opts.OutputDir, prefix+".rsmeta"), OutputDir: filepath.Join(dir, "restored")}); err == nil {
+		t.Fatal("restore accepted empty encryption password")
+	}
+}
+
+func TestBackupWarnings(t *testing.T) {
+	for _, tc := range []struct{ shares, threshold, count int }{{8, 5, 0}, {3, 3, 1}, {8, 3, 1}, {0, 0, 0}} {
+		if got := BackupWarnings(BackupOptions{Shares: tc.shares, Threshold: tc.threshold}); len(got) != tc.count {
+			t.Fatalf("%d/%d: %v", tc.shares, tc.threshold, got)
 		}
 	}
 }
