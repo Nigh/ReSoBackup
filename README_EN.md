@@ -233,7 +233,7 @@ rsbackup restore --input <any .rs.NNN or .rsmeta file> [--password <pwd>] [--out
 
 ## Build
 
-Requires **Go 1.27.1 or later**. Native UI needs no Node.js, npm, Wails or CGO. On Linux the GUI requires GTK 3, Cairo, GDK-Pixbuf and a desktop display; Native windows do not load WebKitGTK, but mygo 0.3.2 still declares / checks it in generated Debian packages and installation scripts. On Debian / Ubuntu install `libgtk-3-0` (`libgtk-3-0t64` on newer systems), which pulls in the runtime dependencies.
+Requires **Go 1.27.1 or later**. Native UI needs no Node.js, npm, Wails or CGO. On Linux the GUI requires GTK 3, Cairo, GDK-Pixbuf and a desktop display; Native windows do not load WebKitGTK, but mygo 0.3.7 still declares / checks it in generated Debian packages and installation scripts. On Debian / Ubuntu install `libgtk-3-0` (`libgtk-3-0t64` on newer systems), which pulls in the runtime dependencies.
 
 ```bash
 # Current platform (GUI + CLI)
@@ -267,6 +267,10 @@ Theme provenance and licensing: [third_party/xianii-theme](third_party/xianii-th
 - Metadata file (`.rsmeta`): Stores KDF parameters, shard parameters, original file size, encryption flags — everything needed for recovery.
 - Shard files (`.rs.NNN`): Each has a 31-byte lightweight header (magic: `RSBK`), enabling automatic discovery of all shards in the same backup set.
 - Storage overhead scales roughly with `shares / threshold`. A higher `shares - threshold` means more shards can be lost, but also more storage used.
+
+## Known defect: Wayland startup window placement
+
+On native Linux Wayland, the window may no longer be vertically centered after its startup height adjustment. Height limits account for the title bar and borders, but the desktop compositor controls window placement and ignores the application's repositioning request. The application retains the native Wayland backend; move the window manually if needed.
 
 ## License
 

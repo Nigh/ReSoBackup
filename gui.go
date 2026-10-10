@@ -8,7 +8,6 @@ import (
 	"math"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
@@ -25,7 +24,7 @@ type formState struct {
 type desktop struct {
 	busyLabel, lastAnnouncement               string
 	win                                       *mygo.Window
-	initialHeight, renderedHeight             int
+	initialHeight                             int
 	lang                                      string
 	dark                                      bool
 	tab                                       int
@@ -72,28 +71,24 @@ func createApp() *mygo.Application {
 	return mygo.App
 }
 
-// Wayland can discard a resize during its initial configure handshake.
-func (s *desktop) fitStartupWindow(attempts int) {
-	time.AfterFunc(200*time.Millisecond, func() {
-		s.win.Update(func() {
-			if s.win.IsDestroyed() {
-				return
-			}
-			bounds := s.win.Bounds()
-			width, height := s.win.ContentSize()
-			area := mygo.Screen.DisplayNearestPoint(mygo.Point{X: bounds.X + bounds.Width/2, Y: bounds.Y + bounds.Height/2}).WorkArea
-			available := max(1, area.Height-max(0, bounds.Height-height))
-			target := min(max(minimumWindowHeight, s.initialHeight), available)
-			if s.renderedHeight == target {
-				return
-			}
-			s.win.SetMinimumSize(700, min(minimumWindowHeight, available))
-			s.win.SetContentSize(width, target)
-			if attempts > 1 {
-				s.fitStartupWindow(attempts - 1)
-			}
-		})
-	})
+func (s *desktop) fitStartupWindow() {
+	bounds := s.win.Bounds()
+	frame := startupWindowFrame(s.win)
+	_, height := s.win.ContentSize()
+	decoration := max(0, frame.Height-height)
+	area := mygo.Screen.DisplayNearestPoint(mygo.Point{X: frame.X + frame.Width/2, Y: frame.Y + frame.Height/2}).WorkArea
+	target := startupWindowBounds(frame, decoration, s.initialHeight, area)
+	s.win.SetMinimumSize(700, min(minimumWindowHeight, max(1, target.Height-decoration)))
+	bounds.Height += target.Height - frame.Height
+	bounds.Y += target.Y - frame.Y
+	// shortcut: Wayland controls placement; enforcing centering needs compositor support.
+	s.win.SetBounds(bounds)
+}
+
+func startupWindowBounds(bounds mygo.Rectangle, decoration, contentHeight int, area mygo.Rectangle) mygo.Rectangle {
+	bounds.Height = min(area.Height, max(minimumWindowHeight, contentHeight)+decoration)
+	bounds.Y = area.Y + (area.Height-bounds.Height)/2
+	return bounds
 }
 
 func (s *desktop) currentForm() *formState {
@@ -111,13 +106,12 @@ func (s *desktop) view(c *ui.Context) {
 	c.SetTheme(p.theme)
 	var pageBounds, contentBounds ui.Rect
 	ui.Column(c).Fill().Background(p.theme.Background).DrawOver(func(_ *ui.Painter, r ui.Rect) {
-		s.renderedHeight = int(math.Round(float64(r.H)))
 		if s.initialHeight != 0 {
 			return
 		}
 		s.initialHeight = int(math.Ceil(float64(r.H - pageBounds.H + contentBounds.H + 2*pagePadding)))
 		if s.win != nil {
-			s.fitStartupWindow(3)
+			s.fitStartupWindow()
 		}
 	}).Children(func() {
 		ui.Row(c).Wrap().Padding(18, 24).Gap(12).AlignItems(ui.Center).Background(p.theme.Surface).Children(func() {

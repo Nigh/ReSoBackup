@@ -231,7 +231,7 @@ rsbackup restore --input <any .rs.NNN or .rsmeta file> [--password <pwd>] [--out
 
 ## 构建
 
-需要 **Go 1.27.1 或更新版本**。Native UI 无需 Node.js、npm、Wails 或 CGO。Linux 运行 GUI 需要 GTK 3、Cairo、GDK-Pixbuf 和可用的桌面显示环境；Native UI 本身不加载 WebKitGTK，但 mygo 0.3.2 生成的 `.deb` 和安装脚本仍声明 / 检查 WebKitGTK 依赖。Debian / Ubuntu 可安装 `libgtk-3-0`（新系统为 `libgtk-3-0t64`），其依赖会一并安装。
+需要 **Go 1.27.1 或更新版本**。Native UI 无需 Node.js、npm、Wails 或 CGO。Linux 运行 GUI 需要 GTK 3、Cairo、GDK-Pixbuf 和可用的桌面显示环境；Native UI 本身不加载 WebKitGTK，但 mygo 0.3.7 生成的 `.deb` 和安装脚本仍声明 / 检查 WebKitGTK 依赖。Debian / Ubuntu 可安装 `libgtk-3-0`（新系统为 `libgtk-3-0t64`），其依赖会一并安装。
 
 ```bash
 # 构建当前平台（GUI + CLI）
@@ -259,6 +259,10 @@ Windows 原始可执行文件保留控制台，方便使用 CLI；桌面安装�
 界面提供中英文切换及 Xianii 暗色 / 浅色切换。风险参数在界面中确认；耗时操作在后台执行，操作期间禁用表单并阻止关闭或退出。字体使用系统字体及中文回退，不依赖在线字体。
 
 主题来源及许可证见 [third_party/xianii-theme](third_party/xianii-theme/README.md)。GUI 迁移不改变 CLI 参数、v2 备份格式或 v1 恢复兼容性。
+
+## 已知缺陷：Wayland 启动窗口位置
+
+Linux 原生 Wayland 下，启动时自动调节窗口高度后，窗口可能不再竖直居中。尺寸限制会计入标题栏和边框，但窗口位置由桌面合成器控制，应用的重新定位请求不会生效。目前保留原生 Wayland 后端；需要时请手动移动窗口。
 
 ## 额外说明
 

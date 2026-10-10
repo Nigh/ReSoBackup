@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -199,5 +200,30 @@ func TestMeasuredHeightDoesNotDependOnInitialWindowHeight(t *testing.T) {
 		if s.initialHeight != measured {
 			t.Fatalf("initial window %d produced content height %d; want %d", height, s.initialHeight, measured)
 		}
+	}
+}
+
+func TestStartupWindowBounds(t *testing.T) {
+	for _, tc := range []struct {
+		name                                         string
+		area                                         mygo.Rectangle
+		contentHeight, decoration, wantHeight, wantY int
+	}{
+		{"fits", mygo.Rectangle{Y: 30, Height: 1050}, 700, 40, 740, 185},
+		{"capped", mygo.Rectangle{Y: 30, Height: 1050}, 1200, 40, 1050, 30},
+		{"minimum", mygo.Rectangle{Y: 30, Height: 1050}, 200, 40, 540, 285},
+		{"small screen", mygo.Rectangle{Y: 30, Height: 400}, 700, 40, 400, 30},
+		{"negative origin", mygo.Rectangle{Y: -1080, Height: 1050}, 700, 40, 740, -925},
+		{"no decoration", mygo.Rectangle{Y: 30, Height: 1050}, 700, 0, 700, 205},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			bounds := startupWindowBounds(mygo.Rectangle{X: 120, Y: 300, Width: 900, Height: 500}, tc.decoration, tc.contentHeight, tc.area)
+			if bounds.X != 120 || bounds.Width != 900 || bounds.Height != tc.wantHeight || bounds.Y != tc.wantY {
+				t.Fatalf("unexpected startup bounds: %+v", bounds)
+			}
+			if bounds.Y < tc.area.Y || bounds.Y+bounds.Height > tc.area.Y+tc.area.Height {
+				t.Fatalf("window extends outside work area: %+v", bounds)
+			}
+		})
 	}
 }
