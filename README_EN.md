@@ -256,7 +256,7 @@ go tool mygo build
 make test
 ```
 
-Raw Windows executables retain a console for CLI use; mygo creates desktop installers. Cross-platform packaging uses `go tool mygo build -platform darwin/universal,windows/amd64,linux/amd64`; macOS signing and DMG creation require macOS. Configure release signing / notarization before distribution.
+Windows releases provide only the directly runnable `rsbackup_windows_amd64.exe`, retaining a console for CLI use; no Windows installer is generated. Cross-platform packaging uses `go tool mygo build -platform darwin/universal,windows/amd64,linux/amd64`; macOS signing and DMG creation require macOS. Configure release signing / notarization before distribution.
 
 The interface supports English / Chinese and Xianii dark / light themes. Risky parameters are confirmed in the interface. Operations run in the background, with forms and closing / quitting disabled until completion. Fonts use system fonts and Chinese fallback without online font downloads.
 
