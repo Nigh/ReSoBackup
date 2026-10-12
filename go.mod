@@ -4,7 +4,7 @@ go 1.27.1
 
 require (
 	github.com/ebitengine/purego v0.11.1
-	github.com/egoist/mygo v0.3.7
+	github.com/egoist/mygo v0.4.5
 	github.com/klauspost/reedsolomon v1.12.4
 	golang.org/x/crypto v0.50.0
 	golang.org/x/term v0.42.0

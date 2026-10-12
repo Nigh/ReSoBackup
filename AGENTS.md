@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-ReSo Backup is a Reed-Solomon encrypted backup tool built with Go 1.27.1+ and mygo v0.3.7 Native UI. The desktop UI is entirely Go, drawn by mygo; no HTML, JavaScript, WebView, frontend build or generated bindings.
+ReSo Backup is a Reed-Solomon encrypted backup tool built with Go 1.27.1+ and mygo v0.4.5 Native UI. The desktop UI is entirely Go, drawn by mygo; no HTML, JavaScript, WebView, frontend build or generated bindings.
 
 - No arguments: launch the native desktop GUI.
 - CLI: `rsbackup backup/restore` with the existing flags.
@@ -30,7 +30,7 @@ ReSo Backup is a Reed-Solomon encrypted backup tool built with Go 1.27.1+ and my
 | Packaging | `mygo.json`, `resources/icon.webp`, `resources/icon.png` | Native app identity, version, icon and package configuration |
 | Theme source | `third_party/xianii-theme/` | Pinned upstream tokens, provenance and MIT license |
 
-The icon source is `resources/icon.webp`, used directly by both READMEs. `resources/icon.png` is a pixel-identical PNG export for mygo v0.3.7 packaging, which only accepts PNG icons. When replacing the source, regenerate the PNG export with its dimensions and transparency preserved.
+The icon source is `resources/icon.webp`, used directly by both READMEs. `resources/icon.png` is a pixel-identical PNG export for mygo v0.4.5 packaging, which only accepts PNG icons. When replacing the source, regenerate the PNG export with its dimensions and transparency preserved.
 
 ## Build & Dev Commands
 
@@ -47,7 +47,7 @@ make test                 # Go vet, all tests, CLI-only tests
 go test -race ./...        # race checks (requires CGO for the race runtime)
 ```
 
-Normal builds use `CGO_ENABLED=0`. Linux GUI runtime requires GTK 3, Cairo, GDK-Pixbuf and a display (X11 or Wayland); native-only windows do not load WebKitGTK, but mygo 0.3.7 still hardcodes it in `.deb` dependencies and the install script checks. Raw executables need no WebKitGTK. macOS packaging/signing/DMGs require macOS. Raw Windows executables retain the console for CLI use; mygo desktop packages use its GUI packaging defaults. Release CI tests on all three platforms, builds raw executables and desktop packages, and sets the package version from the release tag.
+Normal builds use `CGO_ENABLED=0`. Linux GUI runtime requires GTK 3, Cairo, GDK-Pixbuf and a display (X11 or Wayland); native-only windows do not load WebKitGTK, but mygo 0.4.5 still hardcodes it in `.deb` dependencies and the install script checks. Raw executables need no WebKitGTK. macOS packaging/signing/DMGs require macOS. Raw Windows executables retain the console for CLI use; mygo desktop packages use its GUI packaging defaults. Release CI tests on all three platforms, builds raw executables and desktop packages, and sets the package version from the release tag.
 
 ## Key Conventions
 
@@ -58,7 +58,7 @@ Normal builds use `CGO_ENABLED=0`. Linux GUI runtime requires GTK 3, Cairo, GDK-
 - Forms and tabs are disabled during operations; window close and app quit are prevented until work finishes. No cancellation/progress API is implemented in the core.
 - Risk confirmation belongs to callers: CLI uses terminal confirmation, GUI uses a themed modal. `app.BackupWarnings` supplies the shared warning policy; `app.ValidateBackupOptions` validates both entry points. Existing warning/error text from the core remains English.
 - Core backup/restore never prompt on stdin; encrypted operations reject empty passwords. CLI obtains a password before calling the core.
-- The window starts at 900×500 content DIP; it is created hidden and shown after the window reference is assigned; after its first native layout, it measures the actual form, scroll viewport and footer/header bounds (independent of initial viewport height) and requests bounds that fit and vertically center within the current display work area, including the actual GTK titlebar/borders on Linux (queried through GDK using the existing purego dependency) or native window decoration on other platforms, and preserving horizontal position. Height and position are submitted together with SetBounds. GTK/Wayland global positioning is compositor-controlled, so application requests cannot guarantee vertical centering. If GTK frame measurement is unavailable, it logs a library-load failure and falls back to mygo bounds; decoration fitting then cannot be guaranteed. Startup sizing makes one request on the main thread; mygo v0.3.7 includes the upstream Wayland early-resize fix (PR #151), so no application timer, retry or rendered-height tracking is needed. Later form changes and manual resizing do not trigger auto-sizing. Backup/Restore modes use centered, equal-width, filled tabs with keyboard navigation; keep scrolling for smaller windows, larger system text and long messages.
+- The window starts at 900×500 content DIP; it is created hidden and shown after the window reference is assigned; after its first native layout, it measures the actual form, scroll viewport and footer/header bounds (independent of initial viewport height) and requests bounds that fit and vertically center within the current display work area, including the actual GTK titlebar/borders on Linux (queried through GDK using the existing purego dependency) or native window decoration on other platforms, and preserving horizontal position. Height and position are submitted together with SetBounds. GTK/Wayland global positioning is compositor-controlled, so application requests cannot guarantee vertical centering. If GTK frame measurement is unavailable, it logs a library-load failure and falls back to mygo bounds; decoration fitting then cannot be guaranteed. Startup sizing makes one request on the main thread; mygo v0.4.5 includes the upstream Wayland early-resize fix (PR #151), so no application timer, retry or rendered-height tracking is needed. Later form changes and manual resizing do not trigger auto-sizing. Backup/Restore modes use centered, equal-width, filled tabs with keyboard navigation; keep scrolling for smaller windows, larger system text and long messages.
 - GUI defaults to the Xianii dark theme, with a light-theme toggle. Source tokens are pinned under `third_party/`; update Go mappings and provenance together. Use system font fallback and preserve keyboard labels/focus and system accessibility preferences.
 - Metadata version remains v2 with `encrypted` / `encrypt_file_name`; v1 restore stays backward compatible (always encrypted).
 
@@ -75,3 +75,5 @@ The Native UI migration was checked with Go vet, mygo lifetime checks, headless 
 The mygo v0.3.7 upgrade and removal of the startup resize workaround were checked with Go vet, mygo lifetime checks, GUI/core/CLI tests, race tests and CGO-free Linux amd64, Windows amd64 and macOS arm64 builds. Native Wayland checks covered English/Chinese plaintext/encrypted forms, verified actual rendered dimensions against the measured height and display cap, and confirmed later resizing remains in effect. Desktop packaging and Windows/macOS interaction were not rechecked for this upgrade.
 
 Startup vertical centering was checked with geometry regression tests, Go vet, mygo lifetime checks, GUI/core/CLI and race tests, plus CGO-free Linux/Windows/macOS builds. Native X11 checks confirmed the decorated frame is centered and fits the work area for both a normal form and an oversized form capped to the work-area height; later manual resizing remained in effect. Native Wayland checks confirmed sizing and later resizing, but global placement remains controlled by the compositor. Windows/macOS desktop positioning was not tested on hardware.
+
+The mygo v0.4.5 upgrade was checked with Go vet, mygo lifetime checks, GUI/core/CLI tests, race tests, CGO-free Linux amd64/Windows amd64/macOS arm64 builds, the CLI-only build/help path and Linux desktop packaging. The source migration preview reported no changes; the existing DialogBase cancellation behavior and architecture-independent release upload globs remain compatible with the 0.4.x breaking changes. A native Wayland launch ran for five seconds without startup errors before timeout termination; detailed desktop interaction, geometry, input methods, screen readers, Windows/macOS packaging and hardware checks were not repeated. The existing Wayland placement limitation remains.

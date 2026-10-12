@@ -231,7 +231,7 @@ rsbackup restore --input <any .rs.NNN or .rsmeta file> [--password <pwd>] [--out
 
 ## 构建
 
-需要 **Go 1.27.1 或更新版本**。Native UI 无需 Node.js、npm、Wails 或 CGO。Linux 运行 GUI 需要 GTK 3、Cairo、GDK-Pixbuf 和可用的桌面显示环境；Native UI 本身不加载 WebKitGTK，但 mygo 0.3.7 生成的 `.deb` 和安装脚本仍声明 / 检查 WebKitGTK 依赖。Debian / Ubuntu 可安装 `libgtk-3-0`（新系统为 `libgtk-3-0t64`），其依赖会一并安装。
+需要 **Go 1.27.1 或更新版本**。Native UI 无需 Node.js、npm、Wails 或 CGO。Linux 运行 GUI 需要 GTK 3、Cairo、GDK-Pixbuf 和可用的桌面显示环境；Native UI 本身不加载 WebKitGTK，但 mygo 0.4.5 生成的 `.deb` 和安装脚本仍声明 / 检查 WebKitGTK 依赖。Debian / Ubuntu 可安装 `libgtk-3-0`（新系统为 `libgtk-3-0t64`），其依赖会一并安装。
 
 ```bash
 # 构建当前平台（GUI + CLI）

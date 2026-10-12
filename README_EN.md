@@ -233,7 +233,7 @@ rsbackup restore --input <any .rs.NNN or .rsmeta file> [--password <pwd>] [--out
 
 ## Build
 
-Requires **Go 1.27.1 or later**. Native UI needs no Node.js, npm, Wails or CGO. On Linux the GUI requires GTK 3, Cairo, GDK-Pixbuf and a desktop display; Native windows do not load WebKitGTK, but mygo 0.3.7 still declares / checks it in generated Debian packages and installation scripts. On Debian / Ubuntu install `libgtk-3-0` (`libgtk-3-0t64` on newer systems), which pulls in the runtime dependencies.
+Requires **Go 1.27.1 or later**. Native UI needs no Node.js, npm, Wails or CGO. On Linux the GUI requires GTK 3, Cairo, GDK-Pixbuf and a desktop display; Native windows do not load WebKitGTK, but mygo 0.4.5 still declares / checks it in generated Debian packages and installation scripts. On Debian / Ubuntu install `libgtk-3-0` (`libgtk-3-0t64` on newer systems), which pulls in the runtime dependencies.
 
 ```bash
 # Current platform (GUI + CLI)
