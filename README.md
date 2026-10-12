@@ -254,7 +254,7 @@ go tool mygo build
 make test
 ```
 
-Windows 原始可执行文件保留控制台，方便使用 CLI；桌面安装包由 mygo 生成。跨平台打包可使用 `go tool mygo build -platform darwin/universal,windows/amd64,linux/amd64`，macOS 签名与 DMG 生成需要 macOS。分发前仍需配置正式签名 / 公证。
+Windows 发布仅提供可直接运行的 `rsbackup_windows_amd64.exe`，保留控制台以方便使用 CLI；不生成 Windows 安装包。跨平台打包可使用 `go tool mygo build -platform darwin/universal,windows/amd64,linux/amd64`，macOS 签名与 DMG 生成需要 macOS。分发前仍需配置正式签名 / 公证。
 
 界面提供中英文切换及 Xianii 暗色 / 浅色切换。风险参数在界面中确认；耗时操作在后台执行，操作期间禁用表单并阻止关闭或退出。字体使用系统字体及中文回退，不依赖在线字体。
 

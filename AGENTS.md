@@ -47,7 +47,7 @@ make test                 # Go vet, all tests, CLI-only tests
 go test -race ./...        # race checks (requires CGO for the race runtime)
 ```
 
-Normal builds use `CGO_ENABLED=0`. Linux GUI runtime requires GTK 3, Cairo, GDK-Pixbuf and a display (X11 or Wayland); native-only windows do not load WebKitGTK, but mygo 0.4.5 still hardcodes it in `.deb` dependencies and the install script checks. Raw executables need no WebKitGTK. macOS packaging/signing/DMGs require macOS. Raw Windows executables retain the console for CLI use; mygo desktop packages use its GUI packaging defaults. Release CI tests on all three platforms, builds raw executables and desktop packages, and sets the package version from the release tag.
+Normal builds use `CGO_ENABLED=0`. Linux GUI runtime requires GTK 3, Cairo, GDK-Pixbuf and a display (X11 or Wayland); native-only windows do not load WebKitGTK, but mygo 0.4.5 still hardcodes it in `.deb` dependencies and the install script checks. Raw executables need no WebKitGTK. macOS packaging/signing/DMGs require macOS. Raw Windows executables retain the console for CLI use; mygo desktop packages use its GUI packaging defaults. Release CI tests and builds raw executables on all three platforms. Windows releases contain only the directly runnable `rsbackup_windows_amd64.exe`; package version updates and desktop packaging run only on Linux/macOS, using the release tag as the package version. Installer `.exe` files are not uploaded.
 
 ## Key Conventions
 
