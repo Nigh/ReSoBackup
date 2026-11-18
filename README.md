@@ -9,6 +9,10 @@
 </p>
 
 <p align="center">
+  <a href="https://awesomemygo.dev/apps/reso-backup"><img src="https://awesomemygo.dev/badge.svg"></a>
+</p>
+
+<p align="center">
   基于 Reed-Solomon 纠删码的加密备份工具 —— 把文件切成多份分片，分散存储，任意几份丢失也能恢复
 </p>
 
